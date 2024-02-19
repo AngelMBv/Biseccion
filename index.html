@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Método de Bisección</title>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+h1, h2 {
+    text-align: center;
+}
+
+.form-container {
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.form-group {
+    margin-bottom: 10px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: bold;
+}
+
+input[type="text"],
+input[type="number"],
+button {
+    padding: 8px;
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-top: 5px;
+}
+
+button {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+.results-container {
+    margin-top: 20px;
+}
+
+.table-container {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+table, th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
+}
+
+th {
+    background-color: #f2f2f2;
+}
+
+.chart-container {
+    margin-top: 20px;
+    text-align: center;
+}
+
+</style>
+</head>
+<body>
+    <div class="container">
+        <h1>Método de Bisección</h1>
+        <div class="form-container">
+            <div class="form-group">
+                <label for="funcion">Función f(x):</label>
+                <input type="text" id="funcion" placeholder="ej. 4*x^2 - 5*x">
+            </div>
+            <div class="form-group">
+                <label for="a">Valor inicial a:</label>
+                <input type="number" id="a">
+            </div>
+            <div class="form-group">
+                <label for="b">Valor inicial b:</label>
+                <input type="number" id="b">
+            </div>
+            <div class="form-group">
+                <label for="tolerancia">Tolerancia:</label>
+                <input type="number" id="tolerancia" step="any">
+            </div>
+            <button onclick="calcularBiseccion()">Calcular</button>
+        </div>
+    
+        <div class="results-container">
+            <h2>Pasos</h2>
+            <div id="pasos"></div>
+    
+            <h2>Iteraciones</h2>
+            <div class="table-container">
+                <table id="iteraciones">
+                    <thead>
+                        <tr>
+                            <th>Iteración</th>
+                            <th>a</th>
+                            <th>b</th>
+                            <th>c</th>
+                            <th>f(a)</th>
+                            <th>f(b)</th>
+                            <th>f(c)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div> <br>
+    
+    <div id="grafica" class="chart-container"></div>
+    
+
+<!-- Incluir la biblioteca math.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.5.0/math.js"></script>
+
+<!-- Incluir la biblioteca AnyChart para gráficos -->
+<script src="https://cdn.anychart.com/releases/8.10.0/js/anychart-bundle.min.js"></script>
+
+<script>
+function calcularBiseccion() {
+    var funcion = document.getElementById("funcion").value;
+    var a = parseFloat(document.getElementById("a").value);
+    var b = parseFloat(document.getElementById("b").value);
+    var tolerancia = parseFloat(document.getElementById("tolerancia").value);
+
+    var pasosDiv = document.getElementById("pasos");
+    pasosDiv.innerHTML = "";
+    var iteracionesTable = document.getElementById("iteraciones");
+    var graficaDiv = document.getElementById("grafica");
+    iteracionesTable.getElementsByTagName("tbody")[0].innerHTML = "";
+
+    // Función para evaluar la función ingresada
+    var f = math.compile(funcion);
+
+    var iteracion = 0;
+    var c;
+    var error = tolerancia + 1;
+    while (error > tolerancia) {
+        c = (a + b) / 2;
+        var fA = f.evaluate({ x: a });
+        var fB = f.evaluate({ x: b });
+        var fC = f.evaluate({ x: c });
+
+        var procedimiento;
+        if (fA * fC < 0) {
+            b = c;
+            procedimiento = "f(a) * f(c) < 0, entonces b = c";
+        } else {
+            a = c;
+            procedimiento = "f(a) * f(c) >= 0, entonces a = c";
+        }
+
+        pasosDiv.innerHTML += "<p>Iteración " + iteracion + ": " + procedimiento + "</p>";
+
+        var newRow = iteracionesTable.getElementsByTagName("tbody")[0].insertRow();
+        newRow.innerHTML = "<td>" + iteracion + "</td><td>" + a + "</td><td>" + b + "</td><td>" + c + "</td><td>" + fA + "</td><td>" + fB + "</td><td>" + fC + "</td>";
+
+        error = Math.abs(b - a);
+        iteracion++;
+    }
+
+    pasosDiv.innerHTML += "<p>La raíz aproximada es: " + c + " con un error de " + error + "</p>";
+
+    // Generar la gráfica
+    var chartData = [];
+    for (var i = a; i <= b; i += 0.1) {
+        chartData.push({ x: i, value: f.evaluate({ x: i }) });
+    }
+
+    // Crear el gráfico
+    anychart.onDocumentReady(function() {
+        // Limpiar el contenido anterior
+        graficaDiv.innerHTML = "";
+
+        // Crear el gráfico de línea
+        var chart = anychart.line(chartData);
+
+        // Título del gráfico
+        chart.title('Gráfica de f(x)');
+
+        // Configurar el contenedor del gráfico
+        chart.container('grafica');
+
+        // Dibujar el gráfico
+        chart.draw();
+    });
+}
+</script>
+</body>
+</html>
